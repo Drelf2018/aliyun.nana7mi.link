@@ -1,9 +1,8 @@
-import uvicorn
 import httpx
-from lxml import html
+import uvicorn
 from fastapi import FastAPI
+from lxml import etree
 
-etree = html.etree
 app = FastAPI()
 
 @app.get('/get_list')
@@ -12,22 +11,22 @@ async def get_list():
     Products = dict()
     for tr in data.xpath('.//tbody/tr'):
         for td in tr.xpath('./td'):
-            match td.xpath("./@class")[0][39:-5]:
-                case "title":
-                    name = td.xpath('.//span/text()')[0]
-                    if name not in Products:
-                        Products[name] = dict()
-                        Products[name]["price"] = dict()
-                case "variant":
-                    variant = dict()
-                    for span in td.xpath('./div/span'):
-                        color = '/'.join(span.xpath("./div/span/text()"))
-                        size = '/'.join(span.xpath("./span/text()"))       
-                        variant[color] = size
-                case "price":
-                    if val := td.xpath('.//span/text()'):
-                        if val[0] != "0.00 EUR":
-                            Products[name]["price"][val[0]] = variant
+            tag = td.xpath("./@class")[0][39:-5]
+            if tag == "title":
+                name = td.xpath('.//span/text()')[0]
+                if name not in Products:
+                    Products[name] = dict()
+                    Products[name]["price"] = dict()
+            elif tag == "variant":
+                variant = dict()
+                for span in td.xpath('./div/span'):
+                    color = '/'.join(span.xpath("./div/span/text()"))
+                    size = '/'.join(span.xpath("./span/text()"))       
+                    variant[color] = size
+            elif tag == "price":
+                val = td.xpath('.//span/text()')
+                if val and val[0] != "0.00 EUR":
+                    Products[name]["price"][val[0]] = variant
 
     imgs = etree.HTML(httpx.get("https://acrnm.com/").text)
     for name in Products:
