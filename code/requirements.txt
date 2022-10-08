@@ -1,4 +1,4 @@
 fastapi
 uvicorn
 httpx
-lxml
+lxml==4.9.1
