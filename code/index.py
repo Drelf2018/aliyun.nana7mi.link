@@ -1,8 +1,9 @@
 import uvicorn
 import httpx
-from lxml import etree
+from lxml import html
 from fastapi import FastAPI
 
+etree = html.etree
 app = FastAPI()
 
 @app.get('/get_list')
