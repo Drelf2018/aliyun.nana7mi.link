@@ -10,7 +10,10 @@ app = FastAPI()
 @app.get("/self")
 async def self(sessdata: str, bili_jct: str, buvid3: str):
     credential = Credential(sessdata=sessdata, bili_jct=bili_jct, buvid3=buvid3)
-    return await user.get_self_info(credential)
+    if await credential.check_valid():
+        return await user.get_self_info(credential)
+    else:
+        return {'mid': -1}
 
 @app.get('/get_list')
 async def get_list():
