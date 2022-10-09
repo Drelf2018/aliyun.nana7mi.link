@@ -7,8 +7,8 @@ from bilibili_api import user, Credential
 
 app = FastAPI()
 
-@app.post("/self")
-async def self(sessdata=Body(None), bili_jct=Body(None), buvid3=Body(None)):
+@app.get("/self")
+async def self(sessdata: str, bili_jct: str, buvid3: str):
     credential = Credential(sessdata=sessdata, bili_jct=bili_jct, buvid3=buvid3)
     return await user.get_self_info(credential)
 
