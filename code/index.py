@@ -1,9 +1,16 @@
 import httpx
 import uvicorn
 from fastapi import FastAPI
+from fastapi import Body
 from lxml import etree
+from bilibili_api import user, Credential
 
 app = FastAPI()
+
+@app.post("/self")
+async def self(sessdata=Body(None), bili_jct=Body(None), buvid3=Body(None)):
+    credential = Credential(sessdata=sessdata, bili_jct=bili_jct, buvid3=buvid3)
+    return await user.get_self_info(credential)
 
 @app.get('/get_list')
 async def get_list():
