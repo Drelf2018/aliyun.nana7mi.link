@@ -22,6 +22,21 @@ async def self(uid: str, sessdata: str, bili_jct: str, buvid3: str):
         return await user.User(uid, credential).get_user_info()
     else:
         return {'mid': -1}
+    
+@app.get("/getLoginUrl")
+def getLoginUrl():
+    return httpx.get("https://passport.bilibili.com/qrcode/getLoginUrl").json()
+
+@app.get("/getLoginInfo")
+def getLoginInfo(oauthKey: str):
+    js = httpx.post('https://passport.bilibili.com/qrcode/getLoginInfo', data={'oauthKey': oauthKey}).json()
+    if js['status']:
+        url: str = js['data']['url']
+        url = url.replace('https://passport.biligame.com/crossDomain?', '')
+        cookies = url.split('&')
+        return {cookie.split('=')[0]: cookie.split('=')[1] for cookie in cookies}
+    else:
+        return {'DedeUserID': -1}
 
 @app.get('/get_list')
 async def get_list():
