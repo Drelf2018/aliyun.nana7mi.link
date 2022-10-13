@@ -8,18 +8,18 @@ from bilibili_api import user, Credential
 app = FastAPI()
 
 @app.get("/self")
-async def self(sessdata: str, bili_jct: str, buvid3: str):
-    credential = Credential(sessdata=sessdata, bili_jct=bili_jct, buvid3=buvid3)
+async def self(SESSDATA: str, bili_jct: str):
+    credential = Credential(sessdata=SESSDATA, bili_jct=bili_jct)
     if await credential.check_valid():
         return await user.get_self_info(credential)
     else:
         return {'mid': -1}
     
 @app.get("/info")
-async def self(uid: str, sessdata: str, bili_jct: str, buvid3: str):
-    credential = Credential(sessdata=sessdata, bili_jct=bili_jct, buvid3=buvid3)
+async def self(DedeUserID: str, SESSDATA: str, bili_jct: str):
+    credential = Credential(sessdata=SESSDATA, bili_jct=bili_jct)
     if await credential.check_valid():
-        return await user.User(uid, credential).get_user_info()
+        return await user.User(DedeUserID, credential).get_user_info()
     else:
         return {'mid': -1}
     
@@ -34,7 +34,7 @@ def getLoginInfo(oauthKey: str):
         url: str = js['data']['url']
         url = url.replace('https://passport.biligame.com/crossDomain?', '')
         cookies = url.split('&')
-        return {cookie.split('=')[0]: cookie.split('=')[1] for cookie in cookies}
+        return {cookie.split('=')[0]: cookie.split('=')[1] for cookie in cookies if cookie.split('=')[0] in ['DedeUserID', 'SESSDATA', 'bili_jct']}
     else:
         return {'DedeUserID': -1}
 
