@@ -1,25 +1,15 @@
 import httpx
 import uvicorn
 from fastapi import FastAPI
-from fastapi import Body
 from lxml import etree
 from bilibili_api import user, Credential
 
 app = FastAPI()
 
-@app.get("/self")
-async def self(SESSDATA: str, bili_jct: str):
-    credential = Credential(sessdata=SESSDATA, bili_jct=bili_jct)
-    if await credential.check_valid():
-        return await user.get_self_info(credential)
-    else:
-        return {'mid': -1}
-    
 @app.get("/info")
-async def self(DedeUserID: str, SESSDATA: str, bili_jct: str):
-    credential = Credential(sessdata=SESSDATA, bili_jct=bili_jct)
-    if await credential.check_valid():
-        return await user.User(DedeUserID, credential).get_user_info()
+async def info(DedeUserID: str, SESSDATA: str, bili_jct: str):
+    if await Credential(sessdata=SESSDATA, bili_jct=bili_jct).check_valid():
+        return await user.User(DedeUserID).get_user_info()
     else:
         return {'mid': -1}
     
