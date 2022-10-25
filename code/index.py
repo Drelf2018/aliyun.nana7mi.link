@@ -4,7 +4,36 @@ from fastapi import FastAPI
 from lxml import etree
 from bilibili_api import user, Credential
 
+# weibo.cn COOKIES
+headers = {
+    'Connection': 'keep-alive',
+    'Accept-Language': 'zh-CN,zh;q=0.9',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+    'Upgrade-Insecure-Requests': '1',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.62 Safari/537.36',
+    'cookie': 'SUB=_2A25P9OE_DeRhGeFM7lQU8i7PyjmIHXVtFo93rDV6PUJbktAKLVrskW1NQNxRT3IFuL3bXA569DreXZlw2TSGQXb_; SUBP=0033WrSXqPxfM725Ws9jqgMF55529P9D9WWsM7qnLH5XXeUsRC8WX5b75NHD95QNeo-cSKz7e02fWs4DqcjPi--RiKnXiKnci--4i-zEi-2ReKzpe0nt; _T_WM=4f424bc33be0d62a2d75deaea7663a7e'
+}
+
 app = FastAPI()
+
+@app.get("/weibo/{uid}")
+def weibo(uid: str):
+    try:
+        resp = httpx.get(f'https://weibo.cn/u/{uid}', headers=headers)
+        data = etree.HTML(resp.text.encode('utf-8'))
+        return {"code": 1, "data": [post[2:] for post in data.xpath('//div[@class="c"]/@id')]}
+    except Exception as e:
+        return {"code": 0, "error": str(e)}
+    
+
+@app.get("/comment/{mid}")
+def comment(mid: str, uid: int):
+    try:
+        resp = httpx.get(f'https://m.weibo.cn/api/comments/show?id={mid}', headers=headers)
+        return {"code": 1, "data": [d for d in resp.json()['data'].get('data', []) if d['user']['id'] == uid]}
+    except Exception as e:
+        return {"code": 0, "error": str(e)}
 
 @app.get("/info")
 async def info(DedeUserID: str, SESSDATA: str, bili_jct: str):
