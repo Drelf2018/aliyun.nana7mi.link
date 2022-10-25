@@ -22,18 +22,18 @@ def weibo(uid: str):
     try:
         resp = httpx.get(f'https://weibo.cn/u/{uid}', headers=headers)
         data = etree.HTML(resp.text.encode('utf-8'))
-        return {"code": 1, "data": [post[2:] for post in data.xpath('//div[@class="c"]/@id')]}
+        return {"code": 0, "data": [post[2:] for post in data.xpath('//div[@class="c"]/@id')]}
     except Exception as e:
-        return {"code": 0, "error": str(e)}
+        return {"code": 1, "error": str(e)}
     
 
 @app.get("/comment/{mid}")
 def comment(mid: str, uid: int):
     try:
         resp = httpx.get(f'https://m.weibo.cn/api/comments/show?id={mid}', headers=headers)
-        return {"code": 1, "data": [d for d in resp.json()['data'].get('data', []) if d['user']['id'] == uid]}
+        return {"code": 0, "data": [d for d in resp.json()['data'].get('data', []) if d['user']['id'] == uid]}
     except Exception as e:
-        return {"code": 0, "error": str(e)}
+        return {"code": 1, "error": str(e)}
 
 @app.get("/info")
 async def info(DedeUserID: str, SESSDATA: str, bili_jct: str):
