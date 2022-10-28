@@ -79,15 +79,6 @@ async def get_list():
                 val = td.xpath('.//span/text()')
                 if val and val[0] != "0.00 EUR":
                     Products[name]["price"][val[0]] = variant
-
-    imgs = etree.HTML(httpx.get("https://acrnm.com/").text)
-    for name in Products:
-        try:
-            img = "https://acrnm.com/" + imgs.xpath(f'.//span[text()="{name}"]/../img/@src')[0]
-            Products[name]['img'] = img
-        except:
-            ...
-
     return Products
 
 if __name__ == "__main__":
