@@ -2,7 +2,8 @@ import httpx
 import uvicorn
 from fastapi import FastAPI
 from lxml import etree
-from bilibili_api import user, Credential
+import bilibili_api
+from inspect import iscoroutinefunction as isAsync
 
 # weibo.cn COOKIES
 headers = {
@@ -25,7 +26,6 @@ def weibo(uid: str):
         return {"code": 0, "data": [post[2:] for post in data.xpath('//div[@class="c"]/@id')]}
     except Exception as e:
         return {"code": 1, "error": str(e)}
-    
 
 @app.get("/comment/{mid}")
 def comment(mid: str, uid: int):
@@ -34,13 +34,6 @@ def comment(mid: str, uid: int):
         return {"code": 0, "data": [d for d in resp.json()['data'].get('data', []) if d['user']['id'] == uid]}
     except Exception as e:
         return {"code": 1, "error": str(e)}
-
-@app.get("/info")
-async def info(DedeUserID: str, SESSDATA: str, bili_jct: str):
-    if await Credential(sessdata=SESSDATA, bili_jct=bili_jct).check_valid():
-        return await user.User(DedeUserID).get_user_info()
-    else:
-        return {'mid': -1}
     
 @app.get("/getLoginUrl")
 def getLoginUrl():
@@ -57,38 +50,36 @@ def getLoginInfo(oauthKey: str):
     else:
         return {'DedeUserID': -1}
 
-@app.get('/get_list')
-async def get_list():
-    data = etree.HTML(httpx.get('https://acrnm.com/?sort=default&filter=txt').text)
-    Products = dict()
-    for tr in data.xpath('.//tbody/tr'):
-        for td in tr.xpath('./td'):
-            tag = td.xpath("./@class")[0][39:-5]
-            if tag == "title":
-                name = td.xpath('.//span/text()')[0]
-                if name not in Products:
-                    Products[name] = dict()
-                    Products[name]["price"] = dict()
-            elif tag == "variant":
-                variant = dict()
-                for span in td.xpath('./div/span'):
-                    color = '/'.join(span.xpath("./div/span/text()"))
-                    size = '/'.join(span.xpath("./span/text()"))       
-                    variant[color] = size
-            elif tag == "price":
-                val = td.xpath('.//span/text()')
-                if val and val[0] != "0.00 EUR":
-                    Products[name]["price"][val[0]] = variant
-
-    imgs = etree.HTML(httpx.get("https://acrnm.com/").text)
-    for name in Products:
-        try:
-            img = "https://acrnm.com/" + imgs.xpath(f'.//span[text()="{name}"]/../img/@src')[0]
-            Products[name]['img'] = img
-        except:
-            ...
-
-    return Products
+@app.get("/{path}")
+async def bilibili_api_web(path: str, SESSDATA: str = None, bili_jct: str = None, buvid3: str = None, DedeUserID: str = None):
+    pos = bilibili_api
+    attr = path.split(".")
+    while attr:
+        func = attr.pop(0)
+        kwargs = None
+        if func.endswith(")"):
+            func, kwargs = tuple(func.split("("))
+            if kwargs != ")":
+                kwargs = {k.split("=")[0]: k.split("=")[1] for k in kwargs[:-1].split(",")}
+                if "credential" in kwargs:
+                    kwargs["credential"] = bilibili_api.Credential(
+                        sessdata=SESSDATA,
+                        bili_jct=bili_jct,
+                        buvid3=buvid3,
+                        dedeuserid=DedeUserID
+                    )
+                    if await kwargs["credential"].check_valid() is False:
+                        return {"code": 1, "error": "Cookies Error"}
+            else:
+                kwargs = None
+        pos = getattr(pos, func)
+        if kwargs is not None:
+            pos = await pos(**kwargs) if isAsync(pos) else pos(**kwargs)
+        if pos is None:
+            break
+    else:
+        return {"code": 0, "data": pos if kwargs is not None else await pos() if isAsync(pos) else pos()}
+    return {"code": 1, "error": "Path Error"}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=9000)
