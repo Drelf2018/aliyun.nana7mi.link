@@ -15,8 +15,14 @@ headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.62 Safari/537.36',
     'cookie': '_T_WM=4f424bc33be0d62a2d75deaea7663a7e; SUB=_2A25OYyC6DeRhGeFJ6FoX8SjNzjqIHXVtrEDyrDV6PUJbkdAKLUTYkW1NfB9c4mX8iDOuMuRJjRhusVSksNkPl5Az; SCF=AjTyISCkRlwIyYTl4s8fHOI4utjEYr3jQbVCaQ3YIXWD4Bm52DNP72ago_zCTbpsLVpzwTBINAhovOAq7oM4owc.; SSOLoginState=1667715306'
 }
-
+click_count = 0
 app = FastAPI()
+
+@app.get("/click")
+def click():
+    global click_count 
+    click_count += 1
+    return {"code": 0, "click": click_count}
 
 @app.get("/weibo/{uid}")
 def weibo(uid: str):
