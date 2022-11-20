@@ -1,9 +1,12 @@
+import re
+from inspect import iscoroutinefunction as isAsync, isfunction as isFn, isclass
+from typing import List
+
+import bilibili_api
 import httpx
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from lxml import etree
-import bilibili_api
-from inspect import iscoroutinefunction as isAsync
 
 # weibo.cn COOKIES
 headers = {
@@ -57,34 +60,44 @@ def getLoginInfo(oauthKey: str):
         return {'DedeUserID': -1}
 
 @app.get("/{path}")
-async def bilibili_api_web(path: str, SESSDATA: str = None, bili_jct: str = None, buvid3: str = None, DedeUserID: str = None):
-    pos = bilibili_api
-    attr = path.split(".")
-    while attr:
-        func = attr.pop(0)
-        kwargs = None
-        if func.endswith(")"):
-            func, kwargs = tuple(func.split("("))
-            if kwargs != ")":
-                kwargs = {k.split("=")[0]: k.split("=")[1] for k in kwargs[:-1].split(",")}
-                if "credential" in kwargs:
-                    kwargs["credential"] = bilibili_api.Credential(
-                        sessdata=SESSDATA,
-                        bili_jct=bili_jct,
-                        buvid3=buvid3,
-                        dedeuserid=DedeUserID
-                    )
-                    if await kwargs["credential"].check_valid() is False:
-                        return {"code": 1, "error": "Cookies Error"}
-            else:
-                kwargs = None
-        pos = getattr(pos, func)
-        if kwargs is not None:
-            pos = await pos(**kwargs) if isAsync(pos) else pos(**kwargs)
-        if pos is None:
+async def bilibili_api_web(
+    response: Response,
+    path: str,
+    SESSDATA: str = None,
+    bili_jct: str = None,
+    buvid3: str = None,
+    DedeUserID: str = None,
+    no_code: bool = False,
+    max_age: float = -1
+):
+    if max_age != -1: response.headers["Cache-Control"] = f"max-age={max_age}"
+    credential = bilibili_api.Credential(
+        sessdata=SESSDATA,
+        bili_jct=bili_jct,
+        buvid3=buvid3,
+        dedeuserid=DedeUserID
+    )
+    if any([SESSDATA, bili_jct, buvid3, DedeUserID]):
+        if await credential.check_valid() is False:
+            return {"code": 1, "error": "Cookies Error"}
+    position = bilibili_api
+    pattern = re.compile(r'(?:(\w+(?:=\w+)?),?)')
+    for sentence in path.split("."):
+        flags: List[str] = pattern.findall(sentence)
+        func = flags.pop(0)
+        args = tuple(arg for arg in flags if "=" not in arg)
+        kwargs = dict(arg.split("=") for arg in flags if "=" in arg)
+        if "credential" in kwargs:
+            kwargs["credential"] = credential
+        position = position.get(func, None) if isinstance(position, dict) else getattr(position, func, None)
+        if isAsync(position):
+            position = await position(*args, **kwargs)
+        elif isFn(position) or isclass(position):
+            position = position(*args, **kwargs)
+        if position is None:
             break
     else:
-        return {"code": 0, "data": pos if kwargs is not None else await pos() if isAsync(pos) else pos()}
+        return position if no_code else {"code": 0, "data": position}
     return {"code": 1, "error": "Path Error"}
 
 if __name__ == "__main__":
