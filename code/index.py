@@ -67,9 +67,9 @@ async def bilibili_api_web(
     bili_jct: str = None,
     buvid3: str = None,
     DedeUserID: str = None,
-    no_code: bool = False,
-    max_age: float = -1
+    max_age: int = -1
 ):
+    response.headers["Access-Control-Allow-Origin"] = "*"
     if max_age != -1: response.headers["Cache-Control"] = f"max-age={max_age}"
     credential = bilibili_api.Credential(
         sessdata=SESSDATA,
@@ -97,8 +97,8 @@ async def bilibili_api_web(
         if position is None:
             break
     else:
-        return position if no_code else {"code": 0, "data": position}
-    return {"code": 1, "error": "Path Error"}
+        return {"code": 0, "data": position}
+    return {"code": 2, "error": "Path Error"}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=9000)
