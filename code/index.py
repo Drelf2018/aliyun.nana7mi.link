@@ -59,6 +59,25 @@ def getLoginInfo(oauthKey: str):
     else:
         return {'DedeUserID': -1}
 
+@app.get("/matsuri/{uid}")
+async def matsuri(uid: str):
+    async with httpx.AsyncClient() as session:
+        url = f"https://api.matsuri.icu/channel/{uid}/clips"
+        resp = await session.get(url, timeout=40.0)
+        assert resp.status_code == 200, "获取列表错误"
+        tid = resp.json()["data"][0]["id"]
+
+        url = f"https://api.matsuri.icu/clip/{tid}"
+        resp = await session.get(url, timeout=40.0)
+        assert resp.status_code == 200, "获取直播错误"
+        liveinfo = resp.json()["data"]
+
+        url = f"https://api.matsuri.icu/clip/{tid}/comments"
+        resp = await session.get(url, timeout=40.0)
+        assert resp.status_code == 200, "获取弹幕错误"
+        liveinfo["danmaku"] = resp.json()["data"]
+        return liveinfo
+
 @app.get("/{path}")
 async def bilibili_api_web(
     response: Response,
