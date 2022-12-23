@@ -3,9 +3,10 @@ from inspect import iscoroutinefunction as isAsync, isfunction as isFn, isclass
 from typing import List
 
 import bilibili_api
+from bilibili_api.live import LiveDanmaku, LiveRoom
 import httpx
 import uvicorn
-from fastapi import FastAPI, Response
+from fastapi import FastAPI, Response, WebSocket
 from lxml import etree
 
 # weibo.cn COOKIES
@@ -19,7 +20,95 @@ headers = {
     'cookie': '_T_WM=4f424bc33be0d62a2d75deaea7663a7e; SUB=_2A25OYyC6DeRhGeFJ6FoX8SjNzjqIHXVtrEDyrDV6PUJbkdAKLUTYkW1NfB9c4mX8iDOuMuRJjRhusVSksNkPl5Az; SCF=AjTyISCkRlwIyYTl4s8fHOI4utjEYr3jQbVCaQ3YIXWD4Bm52DNP72ago_zCTbpsLVpzwTBINAhovOAq7oM4owc.; SSOLoginState=1667715306'
 }
 click_count = 0
+clients = dict()
 app = FastAPI()
+
+def getChecker(uid):
+    def getSender(uuid, info):
+        if uuid == uid: return "self"
+        if info[2] == 1: return "owner"
+        if info[7] == "": return "default"
+        return "guard"
+    return getSender
+
+def Send(websocket: WebSocket, room: LiveDanmaku):
+    async def inner(data: dict):
+        try:
+            await websocket.send_json(data)
+        except:
+            await room.disconnect()
+            del clients[f"{websocket.client.host}:{websocket.client.port}"]
+    return inner
+
+app.get("/clients")(lambda: clients)
+
+@app.websocket("/sub/{roomid}")
+async def websocket_endpoint(roomid: int, websocket: WebSocket):
+    await websocket.accept()
+    clients[f"{websocket.client.host}:{websocket.client.port}"] = roomid
+
+    getSender = getChecker((await LiveRoom(roomid).get_room_info())["room_info"]["uid"])
+    room = LiveDanmaku(roomid)
+    send = Send(websocket=websocket, room=room)
+
+    @room.on("DANMU_MSG")
+    async def DANMU_MSG(event):
+        uid = event["data"]["info"][2][0]
+        src: dict = event["data"]["info"][0][13]
+        await send({
+            "cmd": "DANMU_MSG",
+            "info": {
+                "face": "",
+                "uid": uid,
+                "sender": getSender(uid, event["data"]["info"][2]),
+                "msg": event["data"]["info"][1],
+                "src": src.get("url") if src and src != "{}" else ""
+            }
+        })
+
+    @room.on("GUARD_BUY")
+    async def GUARD_BUY(event):
+        await send({
+            "cmd": "GUARD_BUY",
+            "info": {
+                "msg": f"新{ event['data']['data']['gift_name']}！<br />欢迎 {event['data']['data']['username']}！",
+                "uid": event["data"]['data']["uid"]
+            }
+        })
+
+    @room.on("SUPER_CHAT_MESSAGE")
+    async def SUPER_CHAT_MESSAGE(event):
+        await send({
+            "cmd": "SUPER_CHAT_MESSAGE",
+            "info": {
+                "title": event["data"]["data"]["user_info"]["uname"],
+                "medal": event["data"]["data"]["medal_info"],
+                "price": event["data"]["data"]["price"],
+                "message": event["data"]["data"]["message"],
+                "avatar": event["data"]["data"]["user_info"]["face"],
+                "uid": event["data"]["data"]["uid"],
+                "contentcolor": event["data"]["data"]["background_color_end"],
+                "headercolor": event["data"]["data"]["background_price_color"],
+                "ts": event["data"]["data"]["ts"]
+            }
+        })
+
+    @room.on("SEND_GIFT")
+    async def SEND_GIFT(event):
+        await send({
+            "cmd": "SEND_GIFT",
+            "info": {
+                "title": event["data"]["data"]["uname"],
+                "medal": event["data"]["data"]["medal_info"],
+                "price": event["data"]["data"]["price"]/1000,
+                "message": event["data"]["data"]["action"] + ' ' + event["data"]["data"]["giftName"],
+                "avatar": event["data"]["data"]["face"],
+                "uid": event["data"]["data"]["uid"],
+                "ts": event["data"]["data"]["timestamp"]
+            }
+        })
+
+    await room.connect()
 
 @app.get("/click")
 def click():
