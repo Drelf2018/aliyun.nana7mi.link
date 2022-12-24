@@ -1,12 +1,14 @@
 import re
+import time
 from inspect import iscoroutinefunction as isAsync, isfunction as isFn, isclass
 from typing import List
 
 import bilibili_api
 import httpx
 import uvicorn
-from fastapi import FastAPI, Response
+from fastapi import FastAPI, Request, Response
 from lxml import etree
+from yaml import Loader, load
 
 # weibo.cn COOKIES
 headers = {
@@ -19,7 +21,7 @@ headers = {
     'cookie': '_T_WM=4f424bc33be0d62a2d75deaea7663a7e; SUB=_2A25OYyC6DeRhGeFJ6FoX8SjNzjqIHXVtrEDyrDV6PUJbkdAKLUTYkW1NfB9c4mX8iDOuMuRJjRhusVSksNkPl5Az; SCF=AjTyISCkRlwIyYTl4s8fHOI4utjEYr3jQbVCaQ3YIXWD4Bm52DNP72ago_zCTbpsLVpzwTBINAhovOAq7oM4owc.; SSOLoginState=1667715306'
 }
 app = FastAPI()
-
+app.get("/clients")(lambda: load(open("clients.yml", "rb"), Loader))
 @app.get("/weibo/{uid}")
 def weibo(uid: str):
     try:
@@ -54,6 +56,7 @@ def getLoginInfo(oauthKey: str):
 
 @app.get("/{path}")
 async def bilibili_api_web(
+    request: Request,
     response: Response,
     path: str,
     SESSDATA: str = None,
@@ -62,6 +65,8 @@ async def bilibili_api_web(
     DedeUserID: str = None,
     max_age: int = -1
 ):
+    if path == "favicon.ico": return
+    open("clients.yml", "a+").write(f"- host: {request.client.host}\n  port: {request.client.port}\n  time: {time.time()}\n  path: {path}\n")
     response.headers["Access-Control-Allow-Origin"] = "*"
     if max_age != -1: response.headers["Cache-Control"] = f"max-age={max_age}"
     credential = bilibili_api.Credential(
