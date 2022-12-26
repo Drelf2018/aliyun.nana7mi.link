@@ -6,6 +6,8 @@ import bilibili_api
 import httpx
 import uvicorn
 from fastapi import FastAPI, Response
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
 from lxml import etree
 
 # weibo.cn COOKIES
@@ -52,6 +54,8 @@ def getLoginInfo(oauthKey: str):
     else:
         return {'DedeUserID': -1}
 
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 @app.get("/{path}")
 async def bilibili_api_web(
     response: Response,
@@ -62,6 +66,7 @@ async def bilibili_api_web(
     DedeUserID: str = None,
     max_age: int = -1
 ):
+    if path.isdigit(): return HTMLResponse(content=open("index.html", "r").read(), status_code=200)
     response.headers["Access-Control-Allow-Origin"] = "*"
     if max_age != -1: response.headers["Cache-Control"] = f"max-age={max_age}"
     credential = bilibili_api.Credential(
