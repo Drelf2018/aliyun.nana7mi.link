@@ -5,6 +5,7 @@ from typing import List
 import bilibili_api
 import httpx
 import uvicorn
+from bilibili_api import emoji
 from fastapi import FastAPI, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
