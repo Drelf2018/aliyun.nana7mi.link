@@ -1,5 +1,4 @@
 fastapi
 uvicorn
 httpx
-lxml==4.9.1
 bilibili-api-python==14.2.0
