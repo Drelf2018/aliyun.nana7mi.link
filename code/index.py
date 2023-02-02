@@ -62,15 +62,15 @@ async def favicon():
 class Parser:
     def __init__(self, var: str):
         self.valid = True
-        self.varDict = dict(v.split("<") for v in var.split(",")) if var else dict()
+        self.varDict = dict(v.split("<-") for v in var.split(";")) if var else dict()
 
     async def __aenter__(self):
-        for key in list(self.varDict.keys()):
-            obj, err = await self.parse(self.varDict[key])
+        for key, val in self.varDict.items():
+            obj, err = await self.parse(val)
             if not err:
                 if isinstance(obj, bilibili_api.Credential):
                     self.valid = await obj.check_valid()
-                self.varDict["$"+key] = obj
+                self.varDict[key] = obj
         return self
 
     async def __aexit__(self, type, value, trace): ...
@@ -141,11 +141,15 @@ async def bilibili_api_web(response: Response, path: str, var: str = "", max_age
     async with Parser(var) as parser:
         if not parser.valid:
             return {"code": 1, "error": "Cookies Error"}
-        obj, err = await parser.parse(path)  # 什么 golang 写法
-        if not err:
-            return {"code": 0, "data": obj}
-        else:
-            return {"code": 2, "error": "Path Error"}
+        try:
+            obj, err = await parser.parse(path)  # 什么 golang 写法
+            if not err:
+                return {"code": 0, "data": obj}
+            else:
+                return {"code": 2, "error": "Path Error"}
+        except Exception as e:
+            return {"code": 3, "error": str(e)} 
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=9000)
+    bilibili_api.Credential()
