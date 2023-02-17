@@ -50,13 +50,12 @@ services:
         name: "fastapi"
         description: 'Serverless Devs Web Framework Function'
         codeUri: './code'
-        runtime: custom
+        runtime: python3.9
         timeout: 60
         customRuntimeConfig:
           command:
             - python
           args:
-            - -u
             - index.py
       triggers:
         - name: httpTrigger
