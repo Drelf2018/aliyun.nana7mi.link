@@ -1,13 +1,6 @@
 import httpx
 import uvicorn
 from bilibili_api.tools.parser import get_fastapi
-from bilibili_api import (
-    album, app, article, ass, audio, bangumi, black_room, channel,
-    cheese, client, comment, dynamic, emoji, favorite_list, game,
-    homepage, interactive_video, live, live_area, login, login_func,
-    manga, note, rank, search, session, settings, topic, user,
-    video, video_uploader, vote
-)
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 
