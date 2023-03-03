@@ -1,3 +1,4 @@
 fastapi
 uvicorn
 bilibili-api-python
+weibo-poster
