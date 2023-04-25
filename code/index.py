@@ -17,7 +17,7 @@ def getLoginUrl():
 
 @app.get("/getLoginInfo")
 def getLoginInfo(oauthKey: str):
-    js = httpx.post('https://passport.bilibili.com/qrcode/getLoginInfo', data={'oauthKey': oauthKey}).json()
+    js = httpx.post("https://passport.bilibili.com/qrcode/getLoginInfo", data={'oauthKey': oauthKey}).json()
     if js['status']:
         url: str = js['data']['url']
         url = url.replace('https://passport.biligame.com/crossDomain?', '')
