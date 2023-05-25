@@ -1,4 +1,4 @@
 fastapi
 uvicorn
-bilibili-api-python
+bilibili-api-python==15.4.3
 weibo-poster
