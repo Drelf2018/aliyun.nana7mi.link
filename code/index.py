@@ -13,7 +13,7 @@ def favicon():
 
 
 @app.get("/content")
-def parse_content(text: str):
+def parse(text):
     ts, _ = parse_text(text)
     return get_content(ts)
 
