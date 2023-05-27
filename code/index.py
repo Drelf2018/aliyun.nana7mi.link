@@ -1,4 +1,6 @@
 import uvicorn
+import PIL
+from PIL import Image
 from bilibili_api.tools.parser import get_fastapi
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
