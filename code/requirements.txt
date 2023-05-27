@@ -1,4 +1,6 @@
 fastapi
 uvicorn
+Brotli==1.0.9
+lxml==4.9.1
 bilibili-api-python==15.4.4
 weibo-poster
