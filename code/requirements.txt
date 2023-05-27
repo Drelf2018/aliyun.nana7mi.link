@@ -1,5 +1,4 @@
 fastapi
 uvicorn
-pillow==7.0.0
-bilibili-api-python==15.4.3
+bilibili-api-python==15.4.4
 weibo-poster
