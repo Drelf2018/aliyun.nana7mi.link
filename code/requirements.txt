@@ -1,3 +1,2 @@
 fastapi
 uvicorn
-bilibili-api-python==15.4.4
