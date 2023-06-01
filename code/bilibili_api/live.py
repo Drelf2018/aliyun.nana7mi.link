@@ -12,7 +12,6 @@ import struct
 import asyncio
 from typing import Any, List, Union
 import aiohttp
-import brotli
 
 from aiohttp.client_ws import ClientWebSocketResponse
 
@@ -1123,10 +1122,7 @@ class LiveDanmaku(AsyncEvent):
         ret = []
         offset = 0
         header = struct.unpack(">IHHII", data[:16])
-        if header[2] == LiveDanmaku.PROTOCOL_VERSION_BROTLI_JSON:
-            realData = brotli.decompress(data[16:])
-        else:
-            realData = data
+        realData = data
 
         if (
             header[2] == LiveDanmaku.PROTOCOL_VERSION_HEARTBEAT

@@ -5,7 +5,6 @@ aiohttp~=3.8.4
 beautifulsoup4~=4.12.2
 colorama~=0.4.6
 pyyaml~=6.0
-brotli~=1.0.9
 httpx~=0.24.1
 qrcode~=7.4.2
 APScheduler~=3.10.1
