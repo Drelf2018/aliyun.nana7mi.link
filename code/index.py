@@ -1,7 +1,6 @@
 import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
-from weibo_poster import get_content, parse_text
 from bilibili_api.tools.parser import get_fastapi
 
 app = FastAPI()
@@ -10,12 +9,6 @@ app = FastAPI()
 @app.get("/favicon.ico")
 def favicon():
     return FileResponse("favicon.ico")
-
-
-@app.get("/content")
-def parse(text):
-    ts, _ = parse_text(text)
-    return get_content(ts)
 
 
 app.mount("/", get_fastapi())
