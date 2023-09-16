@@ -2,7 +2,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from bilibili_api.tools.parser import get_fastapi
-
+import httpx
 app = FastAPI()
 
 
@@ -10,6 +10,11 @@ app = FastAPI()
 def favicon():
     return FileResponse("favicon.ico")
 
+
+@app.get("/laplace")
+def _(roomid: int):
+    return httpx.get(f"https://workers.meta48.live/api/bilibili/room-conn-info/{roomid}", params={"builtInAuth": 1}).json()
+    
 
 app.mount("/", get_fastapi())
 
